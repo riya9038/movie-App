@@ -1,20 +1,41 @@
-import React from 'react';
+import React, { createContext } from 'react';
 import ReactDOM from 'react-dom';
 import { createStore, applyMiddleware } from 'redux';
+import thunk from 'redux-thunk';
 import './index.css';
 import App from './components/App';
 import rootReducer from './reducers';
 
-var logger= function({dispatch, getState}){
-  return function(next){
-    return function(action){
+const logger= ({dispatch, getState})=>(next)=>(action)=>{
+    if(typeof action!=='function')
+    {
       console.log('ACTION_TYPE:',action.type)
-      next(action);
     }
+    next(action)
+  }
+// const thunk= (dispatch, getState)=>(next)=>(action){
+//   if(action.type==='function')
+//   {
+//     action(dispatch)
+//     return;
+//   }
+//   next(action)
+// }
+const store= createStore(rootReducer, applyMiddleware(logger, thunk));
+console.log(store.getState());
+
+export const StoreContext= createContext();
+
+class Provider extends React.Component{
+  render(){
+    const {store}= this.props;
+    return(
+      <StoreContext.Provider value={store}>
+        {this.props.children}
+      </StoreContext.Provider>
+    )
   }
 }
-const store= createStore(rootReducer, applyMiddleware(logger));
-console.log(store.getState());
 
 // store.dispatch({
 //   type: 'ADD_MOVIE',
@@ -22,9 +43,9 @@ console.log(store.getState());
 // })
 // console.log(store.getState());
 ReactDOM.render(
-  <React.StrictMode>
-    <App store={store} />
-  </React.StrictMode>,
+  <Provider store={store}>
+    <App />
+  </Provider>,
   document.getElementById('root')
 );
 
